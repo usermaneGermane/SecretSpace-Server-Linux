@@ -510,6 +510,13 @@ in the path — everyone with the token can read every user's blob, so treat
 the token as a single trust boundary. No push notification: the client syncs
 when you press the button.
 
+## Versions
+
+The Linux server has its own version, in `server/version.py`, and each
+release is tagged `v<version>` (1.3.0 when the repositories were split). It
+is separate from the app's and from the Windows server's: compare a server
+and an app by what they can do, not by their numbers.
+
 ## Development
 
 ```
