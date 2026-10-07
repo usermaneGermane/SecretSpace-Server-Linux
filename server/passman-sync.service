@@ -1,0 +1,43 @@
+[Unit]
+Description=PassMan sync server (encrypted vault blob store)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# These paths match the install steps in README.md. Change them only if you
+# put things somewhere else.
+User=passman
+Group=passman
+WorkingDirectory=/opt/passman/server
+# Where it listens comes from /etc/passman/sync.env (PASSMAN_HOST and
+# PASSMAN_PORT), which passman_setup.py writes: run it again to change them,
+# no edit here needed. 0.0.0.0 listens on every network this machine is on;
+# limit who can connect with the firewall (README.md, step 4). The file is
+# required on purpose: without it the server would quietly fall back to
+# 127.0.0.1, which no PC can reach.
+EnvironmentFile=/etc/passman/sync.env
+ExecStart=/usr/bin/python3 /opt/passman/server/passman_server.py \
+    --store /var/lib/passman/store \
+    --token-file /etc/passman/token
+
+Restart=on-failure
+RestartSec=5
+
+# The service reads one token and writes one directory; nothing else on the
+# filesystem needs to be reachable from it.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/passman
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+
+[Install]
+WantedBy=multi-user.target

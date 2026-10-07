@@ -1,0 +1,18 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# A server run from source keeps its token and the vaults here (README.md,
+# "Running it without systemd"). The vaults are encrypted, but never commit
+# them.
+server/store/
+server/token
+*.vault.enc
+
+# Working notes, kept locally.
+TODO.txt
