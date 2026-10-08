@@ -222,7 +222,25 @@ What is left is the new address in Settings → Sync on every PC, in every
 synced vault.
 
 For a script, skip the questions: `… passman_setup.py setup --host 0.0.0.0
---port 9443`.
+--port 9443`, or `… setup --keep --port 9443` to change only the port.
+
+## Letting in a PC from another network
+
+The firewall rule covers the networks this machine is on. A PC elsewhere —
+behind a router, on a VPN the server is not part of — needs its own rule.
+The setup's third question asks for those addresses, or give them directly:
+
+```bash
+sudo python3 /opt/passman/server/passman_setup.py setup --keep --allow-from 172.17.17.2
+```
+
+Name one address or a network (`10.20.0.0/24`); repeat `--allow-from` or
+separate them with commas for more, and `--allow-from none` removes them.
+They are saved in `sync.env` as `PASSMAN_ALLOW_FROM`, so a later port change
+moves their rules too. Only the firewall changes: the service is not
+restarted. A rule you had already typed by hand for the same address and
+port is taken over (ufw skips the duplicate); one for another port stays
+until you delete it: `sudo ufw status numbered`, then `sudo ufw delete N`.
 
 ## If the token leaks
 
