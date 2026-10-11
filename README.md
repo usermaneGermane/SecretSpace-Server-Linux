@@ -19,7 +19,7 @@ parts of PassMan have their own repositories:
 | Repository | What it holds |
 |---|---|
 | [PassMan-Client-Windows](https://github.com/usermaneGermane/PassMan-Client-Windows) | the app for Windows — what your PCs run |
-| [PassMan-Client-Linux](https://github.com/usermaneGermane/PassMan-Client-Linux) | the app for Linux — not written yet |
+| [PassMan-Client-Linux](https://github.com/usermaneGermane/PassMan-Client-Linux) | the app for Linux — from source or a .deb package |
 | [PassMan-Server-Windows](https://github.com/usermaneGermane/PassMan-Server-Windows) | the same server for Windows, with an installer |
 | **PassMan-Server-Linux** (this one) | the server for Linux |
 
