@@ -51,6 +51,11 @@ number set to `0`: `192.168.0.3/24` means `192.168.0.0/24`.
 git clone --depth 1 https://github.com/usermaneGermane/PassMan-Server-Linux.git ~/PassMan-Server-Linux
 ```
 
+Or download `passman-server-linux-<version>.tar.gz` from
+[Releases](https://github.com/usermaneGermane/PassMan-Server-Linux/releases)
+and unpack it; use that folder wherever these steps say
+`~/PassMan-Server-Linux`.
+
 This is only the source. The running service gets its own copy in step 2, so
 nothing you do in this folder later — pulling, switching branches, deleting
 it — touches the live server until you choose to update it.
@@ -231,7 +236,7 @@ behind a router, on a VPN the server is not part of — needs its own rule.
 The setup's third question asks for those addresses, or give them directly:
 
 ```bash
-sudo python3 /opt/passman/server/passman_setup.py setup --keep --allow-from 172.17.17.2
+sudo python3 /opt/passman/server/passman_setup.py setup --keep --allow-from 192.168.0.1
 ```
 
 Name one address or a network (`10.20.0.0/24`); repeat `--allow-from` or
@@ -338,7 +343,7 @@ listens on whatever address the machine has. Three other things do:
 1. **Firewall.** If the new address is on a different network, allow it and
    drop the old rule:
    ```bash
-   sudo ufw allow from 10.10.10.0/24 to any port 8787 proto tcp   # the new network
+   sudo ufw allow from 192.168.0.0/24 to any port 8787 proto tcp   # the new network
    sudo ufw delete allow from 192.168.1.0/24 to any port 8787 proto tcp
    ```
    If you used step 4B instead, run the setup again and pick the new
@@ -558,3 +563,7 @@ systems. Make a change to either in both repositories, so the two servers
 never drift apart. PassMan-Client-Windows and PassMan-Client-Linux each keep
 a copy of `passman_server.py` for their end-to-end sync tests; refresh
 those too.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
