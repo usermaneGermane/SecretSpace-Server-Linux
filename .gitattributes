@@ -13,3 +13,7 @@
 *.png  binary
 *.ico  binary
 *.webp binary
+
+# Installed on Linux as they are: LF, whatever the checkout PC uses.
+*.service text eol=lf
+LICENSE   text eol=lf
