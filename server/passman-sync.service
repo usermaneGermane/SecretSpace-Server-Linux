@@ -1,5 +1,5 @@
 [Unit]
-Description=PassMan sync server (encrypted vault blob store)
+Description=SecretSpace sync server (encrypted vault blob store)
 After=network-online.target
 Wants=network-online.target
 
