@@ -67,7 +67,7 @@ number set to `0`: `192.168.0.3/24` means `192.168.0.0/24`.
 git clone --depth 1 https://github.com/usermaneGermane/SecretSpace-Server-Linux.git ~/SecretSpace-Server-Linux
 ```
 
-Or download `passman-server-linux-<version>.tar.gz` from
+Or download `secretspace-server-linux-<version>.tar.gz` from
 [Releases](https://github.com/usermaneGermane/SecretSpace-Server-Linux/releases)
 and unpack it; use that folder wherever these steps say
 `~/SecretSpace-Server-Linux`.
