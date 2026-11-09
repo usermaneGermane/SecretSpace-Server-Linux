@@ -4,7 +4,7 @@ server as this repository ships them. Bump it on release and tag the
 release commit v<version>.
 
 It is kept apart from passman_server.py on purpose: that file is the same
-in PassMan-Server-Windows, which has its own version.
+in SecretSpace-Server-Windows, which has its own version.
 """
 
-__version__ = "1.4.2"
+__version__ = "1.5.0"

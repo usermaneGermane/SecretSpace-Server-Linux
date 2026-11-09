@@ -1,4 +1,4 @@
-# PassMan sync server for Linux
+# SecretSpace sync server for Linux
 
 A place to keep your encrypted vault so two PCs can stay in step. It stores
 one blob per user, numbers each revision, and refuses a write computed against
@@ -10,23 +10,34 @@ ciphertext and no key. There is no account system, no password reset and no
 recovery path here, by design — the only secret that matters never leaves
 your PC.
 
+**Formerly PassMan.** The project was renamed to SecretSpace in November
+2026, because another password manager already uses the name PassMan. Only
+the names you read changed. What a running server is made of keeps its
+name, so an existing server needs no change and updates as before: the
+service `passman-sync`, the user `passman`, `/opt/passman/server`,
+`/etc/passman`, `/var/lib/passman/store`, the files `passman_server.py` and
+`passman_setup.py`, and the `X-PassMan-*` headers of the sync protocol. A
+clone made before the rename is in `~/PassMan-Server-Linux`; it keeps
+working (GitHub forwards the old address), so use that folder wherever this
+README says `~/SecretSpace-Server-Linux`.
+
 Standard library only: no `pip install`, no virtualenv, nothing to keep
 patched beyond Python itself.
 
-**Which apps it serves.** PassMan for Windows 2.x and PassMan for Linux
-0.x sync with it. The PassMan 3 test versions (Windows 3.0.0-alpha, Linux
+**Which apps it serves.** SecretSpace for Windows 2.x and SecretSpace for Linux
+0.x sync with it. The SecretSpace 3 test versions (Windows 3.0.0-alpha, Linux
 1.0.0-alpha) do not sync yet: they need accounts on the server, which come
 with server 2.0.
 
 This repository is the server for **Linux**, run by systemd. The other
-parts of PassMan have their own repositories:
+parts of SecretSpace have their own repositories:
 
 | Repository | What it holds |
 |---|---|
-| [PassMan-Client-Windows](https://github.com/usermaneGermane/PassMan-Client-Windows) | the app for Windows — what your PCs run |
-| [PassMan-Client-Linux](https://github.com/usermaneGermane/PassMan-Client-Linux) | the app for Linux — from source or a .deb package |
-| [PassMan-Server-Windows](https://github.com/usermaneGermane/PassMan-Server-Windows) | the same server for Windows, with an installer |
-| **PassMan-Server-Linux** (this one) | the server for Linux |
+| [SecretSpace-Client-Windows](https://github.com/usermaneGermane/SecretSpace-Client-Windows) | the app for Windows — what your PCs run |
+| [SecretSpace-Client-Linux](https://github.com/usermaneGermane/SecretSpace-Client-Linux) | the app for Linux — from source or a .deb package |
+| [SecretSpace-Server-Windows](https://github.com/usermaneGermane/SecretSpace-Server-Windows) | the same server for Windows, with an installer |
+| **SecretSpace-Server-Linux** (this one) | the server for Linux |
 
 ## Before you start
 
@@ -53,13 +64,13 @@ number set to `0`: `192.168.0.3/24` means `192.168.0.0/24`.
 ### 1. Get the code
 
 ```bash
-git clone --depth 1 https://github.com/usermaneGermane/PassMan-Server-Linux.git ~/PassMan-Server-Linux
+git clone --depth 1 https://github.com/usermaneGermane/SecretSpace-Server-Linux.git ~/SecretSpace-Server-Linux
 ```
 
 Or download `passman-server-linux-<version>.tar.gz` from
-[Releases](https://github.com/usermaneGermane/PassMan-Server-Linux/releases)
+[Releases](https://github.com/usermaneGermane/SecretSpace-Server-Linux/releases)
 and unpack it; use that folder wherever these steps say
-`~/PassMan-Server-Linux`.
+`~/SecretSpace-Server-Linux`.
 
 This is only the source. The running service gets its own copy in step 2, so
 nothing you do in this folder later — pulling, switching branches, deleting
@@ -70,7 +81,7 @@ it — touches the live server until you choose to update it.
 ```bash
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin passman
 sudo mkdir -p /opt/passman/server /var/lib/passman/store /etc/passman
-sudo cp ~/PassMan-Server-Linux/server/passman_server.py ~/PassMan-Server-Linux/server/passman_setup.py /opt/passman/server/
+sudo cp ~/SecretSpace-Server-Linux/server/passman_server.py ~/SecretSpace-Server-Linux/server/passman_setup.py /opt/passman/server/
 sudo chown -R passman:passman /var/lib/passman
 
 sudo python3 /opt/passman/server/passman_setup.py
@@ -95,7 +106,7 @@ prints the lines to run. At the end it prints the address to enter on your
 PCs. Run it again any time to change the address or port — see
 [Changing the address or port](#changing-the-address-or-port).
 
-Why the copy into `/opt` rather than running from `~/PassMan-Server-Linux`: the service
+Why the copy into `/opt` rather than running from `~/SecretSpace-Server-Linux`: the service
 unit sets `ProtectHome=yes`, which hides `/home` from it entirely, and on
 recent Ubuntu home folders are not readable by other users anyway. Run it
 from your home folder and it fails with "file not found".
@@ -177,7 +188,7 @@ DHCP reservation stops being a nicety and becomes a requirement.
 ### 5. Install it as a service
 
 ```bash
-sudo cp ~/PassMan-Server-Linux/server/passman-sync.service /etc/systemd/system/
+sudo cp ~/SecretSpace-Server-Linux/server/passman-sync.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now passman-sync
 systemctl status passman-sync
@@ -191,7 +202,7 @@ The unit ships with the paths from step 2 and takes the address and port from
 edit. If it fails with `Failed to load environment files`, step 2's setup
 has not been run.
 
-### 6. Connect PassMan
+### 6. Connect SecretSpace
 
 Show the token and copy it:
 
@@ -272,7 +283,7 @@ copied, change the master password too.
 When `main` has changed:
 
 ```bash
-cd ~/PassMan-Server-Linux && git pull
+cd ~/SecretSpace-Server-Linux && git pull
 sudo cp server/passman_server.py server/passman_setup.py /opt/passman/server/
 sudo systemctl restart passman-sync
 ```
@@ -285,7 +296,7 @@ port moved into `sync.env`): the new unit file has no `--host`/`--port` and
 will not start without `sync.env`, so do it in this order:
 
 ```bash
-cd ~/PassMan-Server-Linux && git pull
+cd ~/SecretSpace-Server-Linux && git pull
 sudo cp server/passman_server.py server/passman_setup.py /opt/passman/server/
 sudo python3 /opt/passman/server/passman_setup.py    # Enter, Enter keeps 0.0.0.0 and 8787
 sudo cp server/passman-sync.service /etc/systemd/system/
@@ -295,14 +306,14 @@ sudo systemctl daemon-reload && sudo systemctl restart passman-sync
 The setup keeps your existing token. If you had used `sed` to put your LAN
 address in the old unit, pick that network in the setup instead.
 
-**If your checkout is of the old `PassMan` repository** (the one that held
-the app and the server together, cloned to `~/PassMan`): it gets no more
+**If your checkout is of the old `SecretSpace` repository** (the one that held
+the app and the server together, cloned to `~/SecretSpace`): it gets no more
 server updates. Clone this repository as in [step 1](#1-get-the-code) and
 update from it as above — the running copy in `/opt/passman`, the token,
-the settings and the vaults stay as they are. Then delete `~/PassMan` when
+the settings and the vaults stay as they are. Then delete `~/SecretSpace` when
 you like.
 
-**Update the server before changing a master password** in PassMan. The
+**Update the server before changing a master password** in SecretSpace. The
 server now records how many times each vault's password has changed; an older
 server does not, and after a second change it can send a PC the wrong way —
 told to adopt a password that is really its own previous one. If `passman-sync.service` itself changed, copy it
@@ -335,10 +346,10 @@ firewall.
 | `PASSMAN_PORT must be a port number` in the log | `sync.env` was edited by hand into something that is not a port — run the setup again |
 | `Cannot read the token file` in the log | `/etc/passman/token` is missing, or not owned by `passman` — redo the `chown` in step 2 |
 | `Address already in use` | Something else on the port — often the hand-started copy from step 3 still running |
-| PassMan: "rejected the sync token" | A stray space or line break when pasting; copy it again. Or the token was replaced with `new-token` — paste the new one |
-| PassMan: "Could not reach …" | Wrong address or port in Settings → Sync, the PC is on another network, or the firewall is blocking it |
+| SecretSpace: "rejected the sync token" | A stray space or line break when pasting; copy it again. Or the token was replaced with `new-token` — paste the new one |
+| SecretSpace: "Could not reach …" | Wrong address or port in Settings → Sync, the PC is on another network, or the firewall is blocking it |
 | It worked, then stopped | The server's address changed — see below |
-| PassMan asks for a master password when you press Sync | Expected after a password change on another PC (or on this one while offline) — see [Changing the master password](https://github.com/usermaneGermane/PassMan-Client-Windows#changing-the-master-password-of-a-vault-you-sync) |
+| SecretSpace asks for a master password when you press Sync | Expected after a password change on another PC (or on this one while offline) — see [Changing the master password](https://github.com/usermaneGermane/SecretSpace-Client-Windows#changing-the-master-password-of-a-vault-you-sync) |
 
 ## If the server's address changes
 
@@ -386,10 +397,10 @@ To get rid of a vault for good:
 PCs first, server second: the other way round, a PC that syncs in between
 simply puts it back.
 
-> PassMan builds from before this was fixed did the opposite — a PC syncing
+> SecretSpace builds from before this was fixed did the opposite — a PC syncing
 > against a server whose copy had been removed **deleted every entry on the
 > PC**. If your PCs have not been rebuilt since, follow the order above
-> strictly. To recover from it: close PassMan without saving anything else,
+> strictly. To recover from it: close SecretSpace without saving anything else,
 > then copy `vault\<username>.vault.enc.bak` over
 > `vault\<username>.vault.enc` — the backup holds the version from just
 > before that sync, until the next save replaces it.
@@ -404,7 +415,7 @@ simply puts it back.
 | `/etc/passman/sync.env` | the address and port (`PASSMAN_HOST`, `PASSMAN_PORT`) |
 | `/etc/passman/token` | the shared token (`600`, owned by `passman`) |
 | `/var/lib/passman/store/` | the encrypted vaults and their history |
-| `~/PassMan-Server-Linux/` | your git checkout — only the source |
+| `~/SecretSpace-Server-Linux/` | your git checkout — only the source |
 
 ## LAN or VPN
 
@@ -456,7 +467,7 @@ stacks ignore `CN`.
 For a quick try-out, from the checkout:
 
 ```bash
-cd ~/PassMan-Server-Linux/server
+cd ~/SecretSpace-Server-Linux/server
 python3 -c "import secrets; print(secrets.token_urlsafe(32))" > token
 chmod 600 token
 python3 passman_server.py --host 0.0.0.0 --port 8787
@@ -504,14 +515,14 @@ Inside the store directory (`/var/lib/passman/store` with the service):
 <user>/history/*.enc    the last 20 revisions — encrypted
 ```
 
-One folder per PassMan username, so several vaults can share one server
+One folder per SecretSpace username, so several vaults can share one server
 without touching each other. `vault.enc` and the history are the same
 AES-256-GCM files as on the PCs; the server never has the key. `meta.json`
 and the folder name are plain: they reveal the username, when it last synced
 and roughly how large the vault is — never an entry.
 
 Each history file stays encrypted with the master password in use when it was
-written. When you change a master password, PassMan offers to delete them —
+written. When you change a master password, SecretSpace offers to delete them —
 ticked by default — since they would still open with the old one. The key
 generation in `meta.json` counts those changes; it holds nothing secret, and
 lets a PC tell whether the copy here is under an older or a newer password
@@ -560,12 +571,12 @@ them on Ubuntu for every pull request and every push to `main`.
 127.0.0.1, with no client involved: the token, which paths exist, If-Match
 (including two pushes racing for one revision), malformed and oversized
 bodies, the history limit and the access log. It is the same file in
-PassMan-Server-Windows.
+SecretSpace-Server-Windows.
 
 `server/passman_server.py` and `server/passman_setup.py` are the same files
-as in PassMan-Server-Windows — `passman_setup.py` holds the setup for both
+as in SecretSpace-Server-Windows — `passman_setup.py` holds the setup for both
 systems. Make a change to either in both repositories, so the two servers
-never drift apart. PassMan-Client-Windows and PassMan-Client-Linux each keep
+never drift apart. SecretSpace-Client-Windows and SecretSpace-Client-Linux each keep
 a copy of `passman_server.py` for their end-to-end sync tests; refresh
 those too.
 
@@ -576,7 +587,7 @@ Free software under the **GNU General Public License v3.0 only**
 share it; if you distribute a changed version, it must stay under the same
 licence, with its source.
 
-The other PassMan repositories (the Windows and Linux clients and sync servers)
+The other SecretSpace repositories (the Windows and Linux clients and sync servers)
 are free software under the same licence.
 
 Security issues: please report them privately, see [SECURITY.md](SECURITY.md).
