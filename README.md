@@ -24,10 +24,17 @@ README says `~/SecretSpace-Server-Linux`.
 Standard library only: no `pip install`, no virtualenv, nothing to keep
 patched beyond Python itself.
 
-**Which apps it serves.** SecretSpace for Windows 2.x and SecretSpace for Linux
-0.x sync with it. The SecretSpace 3 test versions (Windows 3.0.0-alpha.8, Linux
-1.0.0-alpha.8) sync with the newest test version of the server, 2.0.0-alpha.5,
-through the accounts, sharing and recovery described under API v2 below.
+**Which apps it serves.** Server **2.0.0** serves both lines of the app:
+
+- **SecretSpace 3** (Windows 3.0.0, Linux 1.0.0 and later): accounts with
+  several vaults, sharing and recovery, through the routes under *API v2*
+  below.
+- **SecretSpace 2.x** (Windows 2.x, Linux 0.x): one vault per user, through
+  the token routes, exactly as server 1.x did.
+
+Updating from 1.x changes nothing for 2.x apps: the same store, token and
+settings. SecretSpace 3 needs this version; it does not sync with a 1.x
+server.
 
 This repository is the server for **Linux**, run by systemd. The other
 parts of SecretSpace have their own repositories:
@@ -210,7 +217,7 @@ Show the token and copy it:
 sudo cat /etc/passman/token
 ```
 
-**First PC:** unlock your vault, open **Settings → Sync**, enter the address
+**First PC (SecretSpace 2.x):** unlock your vault, open **Settings → Sync**, enter the address
 the setup printed, e.g. `http://192.168.1.50:8787`, and the token, and press **Save & sync**. It checks
 the connection, stores the settings only once the server answers, and uploads
 the vault. The address and token are kept **inside your vault**, which is
@@ -219,6 +226,12 @@ encrypted — not in `config.json`, which is not.
 **Second PC:** on the login screen choose **Restore from server**, and enter
 the same address and token, your username and your master password. After
 that, press **Sync** on either PC whenever you like.
+
+That is SecretSpace 2.x. **SecretSpace 3:** in *Settings → Sync → Set up…*
+enter the address, and the token as the **sign-up code**; the account and
+its vaults are uploaded. On every other device choose **Sign in from a
+server** on the login screen. The token only lets someone make an account
+here: it opens no SecretSpace 3 account.
 
 ### 7. Check it worked
 
@@ -505,10 +518,11 @@ The server replies:
 A first push may omit `If-Match`. `If-Match: *` overwrites whatever is there,
 which the client never sends — it exists for recovering by hand.
 
-### API v2: SecretSpace 3 accounts (test version)
+### API v2: SecretSpace 3 accounts
 
-Server **2.0.0-alpha** adds accounts for the SecretSpace 3 test versions
-(Windows 3.0.0-alpha.3, Linux 1.0.0-alpha.3). It sits beside the routes
+Server **2.0** adds accounts for SecretSpace 3 (Windows 3.0.0, Linux
+1.0.0). The paragraphs below name the test version in which each part
+arrived; 2.0.0 has all of them. It sits beside the routes
 above, which stay exactly as they are for 2.x clients. The server still never
 sees a master password, a Secret Key or a vault key: an account is the
 client's **Login Key** (stored as a salted scrypt hash), its public key, and
@@ -705,9 +719,10 @@ a backup of it is no more sensitive than the vault itself.
 ## What it does not do
 
 No rate limiting, and no access logging beyond the basics; put it behind
-nginx or Caddy if you want those. No multi-user isolation beyond the username
+nginx or Caddy if you want those. No multi-user isolation on the 2.x routes beyond the username
 in the path — everyone with the token can read every user's blob, so treat
-the token as a single trust boundary. No push notification: the client syncs
+the token as a single trust boundary (API v2 accounts each have their own
+login). No push notification: the client syncs
 when you press the button.
 
 ## Versions
