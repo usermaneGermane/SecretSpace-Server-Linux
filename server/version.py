@@ -7,4 +7,4 @@ It is kept apart from passman_server.py on purpose: that file is the same
 in SecretSpace-Server-Windows, which has its own version.
 """
 
-__version__ = "2.0.0-alpha.4"
+__version__ = "2.0.0-alpha.5"
