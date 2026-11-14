@@ -24,6 +24,8 @@ def leftovers():
             continue
         if OLD.search(name):
             found.append(f"{name}: the file's own name")
+        if not name.endswith((".py", ".service", ".spec")):
+            continue                              # an icon, a cache
         with open(path, encoding="utf-8") as f:
             for number, line in enumerate(f, 1):
                 if not OLD.search(line):
