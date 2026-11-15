@@ -26,3 +26,118 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
       - name: Run the tests
         run: python -m pytest -q
+
+  deb:
+    # Build the .deb, then on a runner with real systemd: refuse a server
+    # from before the rename; take over a server installed by hand with
+    # HTTPS on (as README.md set them up before 2.3.0) - settings, token,
+    # certificate and vaults kept; upgrade; remove (vaults kept); and a
+    # fresh install that waits for the setup.
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    steps:
+      - uses: actions/checkout@v4
+      - name: The layout tests, on the system's python3
+        run: sudo apt-get update -q && sudo apt-get install -y -q python3-pytest && python3 -m pytest -q tests/test_build_deb.py
+      - name: Build the package
+        run: python3 deb/build_deb.py
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-24.04'
+        with:
+          name: secretspace-server-deb
+          path: build/secretspace-server_*_all.deb
+      - name: Show it
+        run: dpkg-deb --info build/secretspace-server_*_all.deb && dpkg-deb --contents build/secretspace-server_*_all.deb
+
+      - name: A server from before the rename is refused, and nothing is changed
+        run: |
+          sudo mkdir /etc/passman
+          if sudo apt-get install -y ./build/secretspace-server_*_all.deb > out.txt 2>&1; then
+            cat out.txt; echo "installed over /etc/passman"; exit 1; fi
+          cat out.txt
+          grep -q "migrate" out.txt
+          test ! -e /opt/secretspace && test ! -e /etc/secretspace
+          if dpkg-query -W -f='${Status}' secretspace-server 2>/dev/null | grep -q "ok installed"; then
+            echo "it was installed"; exit 1; fi
+          sudo rmdir /etc/passman
+
+      - name: A server installed by hand, with HTTPS (README.md before 2.3.0)
+        run: |
+          set -eu
+          sudo useradd --system --no-create-home --shell /usr/sbin/nologin secretspace
+          sudo mkdir -p /opt/secretspace/server /var/lib/secretspace/store /etc/secretspace
+          sudo cp server/secretspace_server.py server/secretspace_setup.py /opt/secretspace/server/
+          sudo chown -R secretspace:secretspace /var/lib/secretspace
+          sudo python3 /opt/secretspace/server/secretspace_setup.py setup --host 0.0.0.0 --port 8787
+          sudo cp server/secretspace-sync.service /etc/systemd/system/
+          sudo systemctl daemon-reload
+          sudo systemctl enable --now secretspace-sync
+          sudo python3 /opt/secretspace/server/secretspace_setup.py tls on --yes
+          sudo -u secretspace sh -c 'echo kept > /var/lib/secretspace/store/marker'
+          sudo sha256sum /etc/secretspace/token /etc/secretspace/server.crt /etc/secretspace/sync.env | sudo tee /root/before.sha
+          for i in $(seq 30); do curl -fsS --cacert /etc/secretspace/server.crt https://127.0.0.1:8787/health && break; sleep 1; done
+          curl -fsS --cacert /etc/secretspace/server.crt https://127.0.0.1:8787/health
+
+      - name: The package takes it over
+        run: |
+          set -eu
+          sudo apt-get install -y ./build/secretspace-server_*_all.deb | tee out.txt
+          grep -q "Removed /etc/systemd/system/secretspace-sync.service" out.txt
+          grep -q "Restarted secretspace-sync" out.txt
+          test ! -e /etc/systemd/system/secretspace-sync.service
+          case "$(systemctl show -p FragmentPath --value secretspace-sync)" in
+            /usr/lib/systemd/system/secretspace-sync.service|/lib/systemd/system/secretspace-sync.service) ;;
+            *) systemctl show -p FragmentPath secretspace-sync; exit 1 ;;
+          esac
+          systemctl is-enabled secretspace-sync
+          sudo sha256sum -c /root/before.sha
+          grep -qx kept /var/lib/secretspace/store/marker
+          for i in $(seq 30); do curl -fsS --cacert /etc/secretspace/server.crt https://127.0.0.1:8787/health && break; sleep 1; done
+          curl -fsS --cacert /etc/secretspace/server.crt https://127.0.0.1:8787/health | grep -q secretspace-sync
+          test "$(sudo secretspace-setup show-token)" = "$(sudo cat /etc/secretspace/token | tr -d '[:space:]')"
+          sudo secretspace-setup tls show
+          test ! -e /opt/secretspace/server/__pycache__   # secretspace-setup runs python3 -B
+
+      - name: An upgrade restarts it and keeps everything
+        run: |
+          set -eu
+          before=$(systemctl show -p MainPID --value secretspace-sync)
+          sudo apt-get install -y --reinstall ./build/secretspace-server_*_all.deb
+          after=$(systemctl show -p MainPID --value secretspace-sync)
+          test "$before" != "$after"
+          sudo sha256sum -c /root/before.sha
+          for i in $(seq 30); do curl -fsS --cacert /etc/secretspace/server.crt https://127.0.0.1:8787/health && break; sleep 1; done
+          curl -fsS --cacert /etc/secretspace/server.crt https://127.0.0.1:8787/health
+
+      - name: Remove and purge stop it and keep the vaults, token and settings
+        run: |
+          set -eu
+          sudo apt-get remove -y secretspace-server
+          if systemctl is-active --quiet secretspace-sync; then echo "still running"; exit 1; fi
+          test ! -e /opt/secretspace/server/secretspace_server.py
+          test ! -e /usr/sbin/secretspace-setup
+          sudo apt-get purge -y secretspace-server | tee out.txt
+          grep -q "Kept: the vaults" out.txt
+          sudo sha256sum -c /root/before.sha
+          grep -qx kept /var/lib/secretspace/store/marker
+          getent passwd secretspace
+
+      - name: A fresh install waits for the setup, then runs
+        run: |
+          set -eu
+          sudo mv /etc/secretspace /root/etc-kept
+          sudo mv /var/lib/secretspace /root/data-kept
+          sudo apt-get install -y ./build/secretspace-server_*_all.deb | tee out.txt
+          grep -q "sudo secretspace-setup" out.txt
+          if systemctl is-active --quiet secretspace-sync; then echo "started before the setup"; exit 1; fi
+          test -d /var/lib/secretspace/store
+          test "$(stat -c %U /var/lib/secretspace/store)" = secretspace
+          sudo secretspace-setup setup --host 127.0.0.1 --port 8788
+          sudo systemctl enable --now secretspace-sync
+          for i in $(seq 30); do curl -fsS http://127.0.0.1:8788/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8788/health | grep -q secretspace-sync
+          sudo apt-get purge -y secretspace-server
