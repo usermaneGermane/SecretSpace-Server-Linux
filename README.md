@@ -21,7 +21,7 @@ the port, the token nor the vaults: see
 Standard library only: no `pip install`, no virtualenv, nothing to keep
 patched beyond Python itself.
 
-**Which apps it serves.** Server **2.1.0** serves every line of the app:
+**Which apps it serves.** Server **2.2.0** serves every line of the app:
 
 - **SecretSpace 4** (Windows 4.0.0, Linux 2.0.0): accounts and vaults in the
   current format. It needs this version of the server.
@@ -483,31 +483,45 @@ the service fail at boot whenever it starts before the VPN interface is up.
 
 Your vault is encrypted before it leaves your PC, so nothing on the network
 can read your passwords whether or not TLS is on. What plain HTTP exposes is
-the **sync token**: someone else on the same network could capture it, then
-read or overwrite the encrypted blobs — without being able to decrypt them.
-On a home network or a VPN you trust, that is usually acceptable.
+the login: someone on the same network could capture it and act as your
+account on the server — read or overwrite the encrypted blobs, never decrypt
+them. On a home network or a VPN you trust, that may be acceptable; HTTPS
+closes it.
 
-To protect the token too, add TLS with a self-signed certificate that the
-client pins. The `subjectAltName` must be the address the PCs connect to:
+**Turn HTTPS on** with one command:
 
 ```bash
-cd /etc/secretspace
-sudo openssl req -x509 -newkey rsa:4096 -nodes -days 3650 \
-    -keyout server.key -out server.crt -subj "/CN=secretspace.internal" \
-    -addext "subjectAltName=IP:192.168.1.50"
-sudo chown secretspace:secretspace server.key server.crt
-sudo chmod 600 server.key
+sudo python3 /opt/secretspace/server/secretspace_setup.py tls
 ```
 
-Then add `--cert /etc/secretspace/server.crt --key /etc/secretspace/server.key` to
-the `ExecStart` line of the unit, reload and restart. Copy `server.crt` to
-each PC, set it as the certificate file in Settings → Sync, and change the
-address to `https://`.
+It makes a certificate for the addresses this server is reached at (with
+`openssl`: an EC P-256 key, valid ten years), keeps it beside the token in
+`/etc/secretspace` (`server.key` readable by the service only), writes it into
+`sync.env` and restarts the server. It prints the certificate's SHA-256 and
+what to do on each device:
 
-The client pins that certificate rather than switching verification off, so
-a machine impersonating the server is refused. Without the `subjectAltName`
-the certificate will not validate against an IP address at all — modern TLS
-stacks ignore `CN`.
+1. Copy `/etc/secretspace/server.crt` to the device. It is not secret; the
+   key never leaves the server.
+2. In SecretSpace, *Settings → Sync → Set up…*: change the address to
+   `https://…` (same address and port) and choose the copied file as the
+   certificate file. The app keeps your vaults' sync state: it is the same
+   server.
+
+The app **pins** that certificate instead of trusting any authority, so a
+machine pretending to be your server is refused. The server speaks TLS 1.2
+or newer only.
+
+- `tls show` — whether HTTPS is on, which addresses the certificate covers,
+  and its SHA-256.
+- `tls off` — back to plain HTTP (the certificate files stay). Every device
+  then needs `http://` again.
+- `tls` again — a new certificate. Every device then needs the new file.
+- Changed the address the server listens on? The setup says so if the
+  certificate does not cover the new one: run `tls` again.
+
+A server that had `--cert`/`--key` added to its unit file by hand (the way
+this README described before 2.2.0) keeps working; `migrate` moves those
+into `sync.env`.
 
 ## Running it without systemd
 
