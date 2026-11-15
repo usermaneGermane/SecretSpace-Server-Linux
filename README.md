@@ -64,7 +64,59 @@ firewall line to go with them. If `ip` shows your address ending in `/24` —
 the usual case at home — the network is the same address with the last
 number set to `0`: `192.168.0.3/24` means `192.168.0.0/24`.
 
-## Install on Ubuntu
+## Install with apt (2.3.0 and newer)
+
+The easiest way, on Ubuntu 22.04 or newer or Debian 12 or newer. Add the
+SecretSpace apt repository once (the same one the Linux app uses; its key
+signs the packages, and apt trusts it for this repository only):
+
+```bash
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL https://usermanegermane.github.io/SecretSpace-apt/secretspace.gpg \
+  | sudo tee /etc/apt/keyrings/secretspace.gpg > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/secretspace.gpg] https://usermanegermane.github.io/SecretSpace-apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/secretspace.list
+sudo apt update
+sudo apt install secretspace-server
+```
+
+(Or download `secretspace-server_<version>_all.deb` from
+[Releases](https://github.com/usermaneGermane/SecretSpace-Server-Linux/releases)
+and `sudo apt install ./secretspace-server_*_all.deb` — then updates are by
+hand.)
+
+The package creates the `secretspace` user and the folders, and puts the
+server and the systemd unit in place — steps 1, 2's first four lines and 5
+below. Then:
+
+```bash
+sudo secretspace-setup                          # address, port, token, firewall
+sudo systemctl enable --now secretspace-sync
+sudo secretspace-setup tls                      # HTTPS (recommended)
+```
+
+`secretspace-setup` is the setup of step 2 (`secretspace_setup.py`): every
+command in this README that runs
+`sudo python3 /opt/secretspace/server/secretspace_setup.py …` can be typed as
+`sudo secretspace-setup …`. Steps 4 (who can connect), 6 and 7 apply as
+written.
+
+**A server you installed by hand** (the steps below) can switch to the
+package: `sudo apt install secretspace-server` replaces the program files,
+keeps the settings, the token, the certificate and the vaults, removes the
+copy of the unit in `/etc/systemd/system` if it is the one this repository
+ships (so the package's is used; a changed one is kept and still used), and
+restarts the service. Your devices need no change.
+
+A server from before 2.1.0 (still called PassMan) is refused: run
+[`migrate`](#updating-a-server-from-before-210) first.
+
+`sudo apt remove secretspace-server` stops the server and removes the
+program. The vaults, the token and the settings stay, even with `purge`;
+delete `/var/lib/secretspace` and `/etc/secretspace` yourself only when you
+are sure.
+
+## Install on Ubuntu by hand
 
 ### 1. Get the code
 
@@ -291,7 +343,12 @@ copied, change the master password too.
 
 ## Updating
 
-When `main` has changed (a server that is already 2.1.0 or newer):
+**Installed with apt:** `sudo apt update && sudo apt upgrade` — the package
+restarts the server itself. The settings, the token, the certificate and the
+vaults are not part of the package and are never touched.
+
+**Installed by hand,** when `main` has changed (a server that is already
+2.1.0 or newer):
 
 ```bash
 cd ~/SecretSpace-Server-Linux && git pull
@@ -362,7 +419,7 @@ Afterwards you may rename the clone too: `mv ~/PassMan-Server-Linux
 
 **From a server even older** — one without a setup tool, or a checkout of
 the first repository that held the app and the server together: install
-2.1.0 fresh as in [Install on Ubuntu](#install-on-ubuntu), with the same
+2.1.0 fresh as in [Install on Ubuntu](#install-on-ubuntu-by-hand), with the same
 port, then copy the old store folder and token into the new places before
 the first start.
 
@@ -458,7 +515,9 @@ simply puts it back.
 |---|---|
 | `/opt/secretspace/server/secretspace_server.py` | the running copy of the server |
 | `/opt/secretspace/server/secretspace_setup.py` | the setup: address, port, `new-token` |
-| `/etc/systemd/system/secretspace-sync.service` | the service definition |
+| `/etc/systemd/system/secretspace-sync.service` | the service definition (installed by hand) |
+| `/usr/lib/systemd/system/secretspace-sync.service` | the service definition (installed with apt) |
+| `/usr/sbin/secretspace-setup` | runs the setup (installed with apt) |
 | `/etc/secretspace/sync.env` | the address and port (`SECRETSPACE_HOST`, `SECRETSPACE_PORT`) |
 | `/etc/secretspace/token` | the shared token (`600`, owned by `secretspace`) |
 | `/var/lib/secretspace/store/` | the encrypted vaults and their history |
@@ -829,6 +888,16 @@ systems. Make a change to either in both repositories, so the two servers
 never drift apart. SecretSpace-Client-Windows and SecretSpace-Client-Linux each keep
 a copy of `secretspace_server.py` for their end-to-end sync tests; refresh
 those too.
+
+`deb/build_deb.py` builds the `secretspace-server` package (on Debian or
+Ubuntu; `tests/test_build_deb.py` checks its layout and scripts anywhere).
+CI's `deb` job builds it and, on Ubuntu 22.04 and 24.04 with real systemd,
+checks that it refuses a server from before the rename, takes over a server
+installed by hand with HTTPS on (settings, token, certificate and vaults
+byte for byte the same), restarts on an upgrade, keeps the vaults on remove
+and purge, and waits for the setup on a fresh install. The package of each
+release is published to the SecretSpace apt repository
+([SecretSpace-apt](https://github.com/usermaneGermane/SecretSpace-apt)).
 
 ## License
 
