@@ -7,4 +7,4 @@ It is kept apart from secretspace_server.py on purpose: that file is the same
 in SecretSpace-Server-Windows, which has its own version.
 """
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
