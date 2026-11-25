@@ -44,7 +44,8 @@ DATA_DIR = "/var/lib/secretspace"
 UNIT_PATH = f"/usr/lib/systemd/system/{SERVICE}.service"
 #: Where an install by hand (and `migrate`) put the unit.
 LOCAL_UNIT = f"/etc/systemd/system/{SERVICE}.service"
-PROGRAM_FILES = ("secretspace_server.py", "secretspace_setup.py")
+PROGRAM_FILES = ("secretspace_server.py", "secretspace_setup.py",
+                 "version.py")
 MAINTAINER = "usermaneGermane <scoop-shabby-wad@duck.com>"
 HOMEPAGE = "https://github.com/usermaneGermane/SecretSpace-Server-Linux"
 REPO_URL = HOMEPAGE

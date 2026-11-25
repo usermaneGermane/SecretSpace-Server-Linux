@@ -37,6 +37,7 @@ def test_the_files_are_where_an_install_by_hand_has_them(tree):
         "DEBIAN/prerm",
         "opt/secretspace/server/secretspace_server.py",
         "opt/secretspace/server/secretspace_setup.py",
+        "opt/secretspace/server/version.py",
         "usr/lib/systemd/system/secretspace-sync.service",
         "usr/sbin/secretspace-setup",
         "usr/share/doc/secretspace-server/copyright",
